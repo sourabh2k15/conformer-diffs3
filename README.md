@@ -8,7 +8,7 @@ https://gist.githubusercontent.com/sourabh2k15/9dbadd0f5ca35568ca210ee4cb3b19c1/
 we simply wget above script and run to install required elements. 
 
 ## Code Setup 
-git clone https://github.com/sourabh2k15/conformer-diffs.git
+git clone https://github.com/sourabh2k15/conformer-diffs3.git
 
 cd conformer-diffs
 pip3 install -e .
@@ -61,15 +61,11 @@ torchrun --standalone --nnodes 1 --nproc_per_node 8 pytorch/torch_e2e.py
 # Results: 
 
 
-1) JAX logs 
+
+JAX and PyTorch loss logs can be found here : 
 
 ```
-
+https://gist.github.com/sourabh2k15/7f363358801ec1e8ac770c61c7de5203
 ```
-
-2) PyTorch logs
-
-```
-
 
 ```
