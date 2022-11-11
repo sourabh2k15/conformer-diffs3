@@ -38,7 +38,7 @@ target_paddings - (8, 32, 256)
 
 ```
 cd pytorch
-python3 dump_model_weights.pygit rm --cached
+python3 dump_model_weights.py
 
 ```
 
