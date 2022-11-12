@@ -37,12 +37,12 @@ class ConformerConfig:
   num_encoder_layers: int = 4
   attention_dropout_rate: float = 0.0
   # If None, defaults to 0.1.
-  attention_residual_dropout_rate: Optional[float] = 0.1
+  attention_residual_dropout_rate: Optional[float] = 0.0
   # If None, defaults to 0.0.
   conv_residual_dropout_rate: Optional[float] = 0.0
   feed_forward_dropout_rate: float = 0.0
   # If None, defaults to 0.1.
-  feed_forward_residual_dropout_rate: Optional[float] = 0.1
+  feed_forward_residual_dropout_rate: Optional[float] = 0.0
   convolution_kernel_size: int = 5
   feed_forward_expansion_factor: int = 4
   freq_mask_count: int = 2
@@ -53,7 +53,7 @@ class ConformerConfig:
   time_masks_per_frame: float = 0.0
   use_dynamic_time_mask_max_frames: bool = True
   # If None, defaults to 0.1.
-  input_dropout_rate: Optional[float] = 0.1
+  input_dropout_rate: Optional[float] = 0.0
   batch_norm_momentum: float = 0.999
   batch_norm_epsilon: float = 0.001
 
@@ -620,8 +620,8 @@ class Conformer(nn.Module):
 
     # Ablate random parts of input along temporal and frequency dimension
     # following the specaug procedure in https://arxiv.org/abs/1904.08779.
-    if train:
-      outputs, output_paddings = self.specaug(outputs, output_paddings)
+    # if train:
+    #   outputs, output_paddings = self.specaug(outputs, output_paddings)
 
     # Subsample input by a factor of 4 by performing strided convolutions.
     if config.input_dropout_rate is None:

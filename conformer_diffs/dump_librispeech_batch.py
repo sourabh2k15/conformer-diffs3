@@ -62,7 +62,7 @@ def maybe_pad_batch(batch, desired_batch_size, padding_value=0.0):
 if __name__ == '__main__':
     split ='train'
     global_batch_size = 256
-    data_dir='/mnt/disks/librispeech_processed/work_dir/data'
+    data_dir='/mnt/disks/librispeech_processed_full/work_dir/data'
 
     if split == 'train':
       split = 'train-clean-100+train-clean-360+train-other-500'

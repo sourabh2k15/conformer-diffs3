@@ -110,9 +110,9 @@ class Torch2Jax:
 
   def update_jax_model(self):
     for k in self.flattened_jax_model:
-      print('updating key = ', k)
+      # print('updating key = ', k)
       d = self.jax_model
       for i in k[:-1]:
-        print('i = ', i)
+        # print('i = ', i)
         d = d[i]
       d[k[-1]] = self.pytorch_sd[k].detach().cpu().numpy()

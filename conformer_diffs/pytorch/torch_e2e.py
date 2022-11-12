@@ -2,9 +2,10 @@ import numpy as np
 import torch
 from absl import app
 from absl import logging
-from pytorch_utils import pytorch_init, pytorch_setup
-from model import ConformerEncoderDecoder, ConformerConfig
+from conformer_diffs.pytorch.pytorch_utils import pytorch_init, pytorch_setup
+from conformer_diffs.pytorch.model import ConformerEncoderDecoder, ConformerConfig
 import torch.distributed as dist
+import torch.distributed.nn as dist_nn
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -55,7 +56,7 @@ def init_model_fn(rng):
     config = ConformerConfig(input_dropout_rate=0.0, feed_forward_dropout_rate=0.0)
 
     torch_model = ConformerEncoderDecoder(config)
-    torch_model.load_state_dict(torch.load('pytorch/ckpts/torch_model_weights.pt'))
+    torch_model.load_state_dict(torch.load('ckpts/torch_model_weights.pt'))
     torch_model.eval()
 
     param_shapes = pytorch_param_shapes(torch_model)
@@ -70,8 +71,8 @@ def init_model_fn(rng):
 def pytorch_cosine_warmup(optimizer):
     warmup = LinearLR(
         optimizer,
-        start_factor=1e-10,
-        end_factor=0.02,
+        start_factor=1e-20,
+        end_factor=1,
         total_iters=5000)
     cosine_steps = max(60000 - 5000, 1)
     cosine_decay = CosineAnnealingLR(optimizer, T_max=cosine_steps)
@@ -119,20 +120,19 @@ def update_params(model_params, batch, optimizer_state, step, grad_clip):
         targets.long(),
         input_lengths,
         target_lengths).sum()
-
     l = target_lengths.sum().to(per_seq_loss)
+
     if USE_PYTORCH_DDP:
-      dist.all_reduce(per_seq_loss)
-      dist.all_reduce(l)
+      dist_nn.all_reduce(per_seq_loss)
+      dist_nn.all_reduce(l)
 
     loss = per_seq_loss / max(l, 1)
     loss.backward()
 
     with torch.no_grad():
       parameters = [p for p in current_model.parameters() if p.grad is not None]
-      total_norm = torch.norm(
-          torch.stack([torch.norm(p.grad.detach(), 2) for p in parameters]), 2)
-  
+      total_norm = sum([torch.square(p.grad).sum() for p in parameters])**0.5
+
     if grad_clip is not None:
         torch.nn.utils.clip_grad_norm_(
             current_model.parameters(), max_norm=grad_clip)
@@ -146,16 +146,20 @@ def update_params(model_params, batch, optimizer_state, step, grad_clip):
 def main(_):
     pytorch_init(USE_PYTORCH_DDP, RANK)
 
+    # Loading 1 real batch 
      # Loading 1 real batch 
+    # Loading 1 real batch 
+     # Loading 1 real batch 
+    # Loading 1 real batch 
     sharded_padded_batch = np.load('sharded_padded_batch.npz')
 
     inputs, input_paddings = sharded_padded_batch['inputs']
     targets, target_paddings = sharded_padded_batch['targets']
 
     inputs = inputs.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
-    input_paddings = input_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
+    input_paddings = 0*input_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
     targets = targets.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
-    target_paddings = target_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
+    target_paddings = 0*target_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
 
     sharded_padded_batch = {
         'inputs': (torch.from_numpy(inputs), torch.from_numpy(input_paddings)),
@@ -178,11 +182,12 @@ def main(_):
     num_training_steps = 100
 
     start_time = time.time()
+    dist.barrier()
     for step in range(num_training_steps):
-      optimizer_state, model, _ = update_params(model, sharded_padded_batch, optimizer_state, step, 5.0)
-
+      optimizer_state, model, _ = update_params(model, sharded_padded_batch, optimizer_state, step, 5.0) 
+    
     end_time = time.time()
-    print('PyTorch program execution took %s seconds' % (end_time - start_time))
+    logging.info('PyTorch program execution took %s seconds' % (end_time - start_time))
 
     if USE_PYTORCH_DDP:
         # Cleanup.
