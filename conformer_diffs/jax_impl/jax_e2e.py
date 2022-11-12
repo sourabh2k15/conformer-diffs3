@@ -32,8 +32,8 @@ def load_batch():
     print('target_paddings shape = ', target_paddings.shape)
 
     sharded_padded_batch = {
-        'inputs': (inputs, 0*input_paddings),
-        'targets': (targets, 0*target_paddings)
+        'inputs': (inputs, input_paddings),
+        'targets': (targets, target_paddings)
     }
 
     return sharded_padded_batch

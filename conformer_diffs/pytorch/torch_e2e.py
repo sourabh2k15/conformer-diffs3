@@ -157,9 +157,9 @@ def main(_):
     targets, target_paddings = sharded_padded_batch['targets']
 
     inputs = inputs.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
-    input_paddings = 0*input_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
+    input_paddings = input_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
     targets = targets.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
-    target_paddings = 0*target_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
+    target_paddings = target_paddings.reshape(256, -1)[RANK*32: (RANK + 1)*32, :]
 
     sharded_padded_batch = {
         'inputs': (torch.from_numpy(inputs), torch.from_numpy(input_paddings)),
