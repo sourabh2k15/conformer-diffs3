@@ -25,10 +25,10 @@ class ConformerConfig:
   num_attention_heads: int = 8
   num_encoder_layers: int = 4
   attention_dropout_rate: float = 0.0
-  attention_residual_dropout_rate: float = 0.1
+  attention_residual_dropout_rate: float = 0.0
   conv_residual_dropout_rate: float = 0.0
   feed_forward_dropout_rate: float = 0.0
-  feed_forward_residual_dropout_rate: float = 0.1
+  feed_forward_residual_dropout_rate: float = 0.0
   convolution_kernel_size: int = 5
   feed_forward_expansion_factor: int = 4
   freq_mask_count: int = 2
@@ -505,7 +505,7 @@ class BatchNorm(nn.Module):
       count = mask.sum()
       masked_inp = inputs.masked_fill(mask == 0, 0)
       mean = (masked_inp).sum(dim=(0, 1)) / count
-      var = (torch.square(masked_inp - mean)).sum(dim=(0, 1)) / count
+      var = (torch.square(masked_inp - mean)*mask).sum(dim=(0, 1)) / count
 
       self.running_mean = self.momentum * self.running_mean + (
           1 - self.momentum) * mean.detach()
@@ -622,8 +622,8 @@ class ConformerEncoderDecoder(nn.Module):
     outputs = inputs
     output_paddings = input_paddings
     outputs, output_paddings = self.preprocessor(outputs, output_paddings)
-    if self.training:
-      outputs, output_paddings = self.specaug(outputs, output_paddings)
+    # if self.training:
+    #   outputs, output_paddings = self.specaug(outputs, output_paddings)
     outputs, output_paddings = self.subsample(outputs, output_paddings)
     for conformer in self.conformers:
       outputs = conformer(outputs, output_paddings)

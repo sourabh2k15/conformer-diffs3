@@ -1,4 +1,4 @@
-import model
+from conformer_diffs.jax_impl import model
 import jax
 import numpy as np
 import functools
@@ -115,10 +115,10 @@ def train_step(model_class,
     normalizer = jnp.sum(1 - target_paddings)
     normalized_loss = jnp.sum(per_seq_loss) / jnp.maximum(normalizer, 1)
 
-    return normalized_loss, new_batch_stats
+    return normalized_loss, (new_batch_stats, per_seq_loss, normalizer)
 
   grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
-  (loss, new_batch_stats), grad = grad_fn(params)
+  (loss, (new_batch_stats, per_seq_loss, normalizer)), grad = grad_fn(params)
   (loss, grad) = lax.pmean((loss, grad), axis_name='batch')
   grad_norm = jnp.sqrt(
       sum(jnp.sum(g**2) for g in jax.tree_util.tree_leaves(grad)))
@@ -141,12 +141,14 @@ def main(_):
     # Initing model
     config = model.ConformerConfig(input_dropout_rate=0.0, feed_forward_dropout_rate=0.0)
     model_class = model.Conformer(config)
-    rng = jax.random.PRNGKey(0)
+    rng = jax.random.PRNGKey(10)
     params_rng, dropout_rng = jax.random.split(rng, 2)
-    batch_stats = {}
+    # batch_stats = {}
 
     restored_params = flax_checkpoints.restore_checkpoint(
-      'pytorch/ckpts', target=None, prefix='checkpoint')
+      'ckpts', target=None, prefix='checkpoint')
+    batch_stats = restored_params['batch_stats']
+    restored_params = restored_params['params']
 
     print('Initializing optimizer')
     replicated_optimizer_state, opt_update_fn = init_optimizer_state(restored_params)
@@ -182,7 +184,6 @@ def main(_):
             grad_clip)
         
         print('{}) loss = {} grad_norm = {}'.format(step, loss[0], grad_norm[0]))
-
     end_time = time.time()
     print('JAX program execution took %s seconds' % (end_time - start_time))
 
